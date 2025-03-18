@@ -6,93 +6,91 @@ class TrieNode:
         self.children = {}
         self.is_end_of_word = False
 
-
 class Trie:
     def __init__(self):
         self.root = TrieNode()
 
     def insert(self, word: str):
-        # create node from each character
+        """Inserts a word into the trie."""
         node = self.root
         for ch in word:
             if ch not in node.children:
-                # create node if new
                 node.children[ch] = TrieNode()
-            # move to the next node
             node = node.children[ch]
-        # The end of the word
         node.is_end_of_word = True
 
     def search(self, word: str):
+        """Returns True if the word exists in the trie, False otherwise."""
         node = self.root
         for ch in word:
             if ch not in node.children:
-                return False  # cant find ch
-            # move to the next node
+                return False
             node = node.children[ch]
         return node.is_end_of_word
 
     def startsWith(self, prefix: str):
+        """Returns True if there is any word in the trie that starts with the given prefix."""
         node = self.root
         for ch in prefix:
-            if ch not in node.children():
+            if ch not in node.children:
                 return False
             node = node.children[ch]
         return True
 
     def _dfs(self, node, current_prefix, result):
-        """
-        dfs to find words in trie that starts with a prefix
-        """
-        if node.is_end_of_word():
+        """Depth-first search to find words in trie that start with a prefix."""
+        if node.is_end_of_word:
             result.append(current_prefix)
 
         for ch, child_node in node.children.items():
             self._dfs(child_node, current_prefix + ch, result)
 
-    def getWordsWithPrefixs(self, prefix):
+    def getWordsWithPrefix(self, prefix: str):
+        """Returns a list of words in the trie that start with the given prefix."""
         node = self.root
         for ch in prefix:
             if ch not in node.children:
                 return []
+            node = node.children[ch]
 
         result = []
         self._dfs(node, prefix, result)
+        return result
 
-    def _generate_graph(self, node, graph, parent, label):
-        if node is None:
-            return
-
-        node_name = label
-        graph.node(node_name, label)
-
-        if parent is not None:
-            graph.edge(parent, node_name)
-
-        for ch, child_node in node.children.items():
-            self._generate_graph(child_node, graph, node_name, node_name + "-" + label)
+    def _generate_graph(self, node: TrieNode, graph: graphviz.Digraph, parent: str):
+            """Generates the graph recursively for visualization."""
+            if node is None:
+                return
+            
+            for ch, child_node in node.children.items():
+                node_name = f"{parent}_{ch}"
+                graph.node(node_name, label=ch, shape="ellipse", style="filled", fillcolor="lightyellow")
+                # Draw an edge between parent and child
+                graph.edge(parent, node_name, label=ch)
+                self._generate_graph(child_node, graph, node_name)
 
     def visualise(self):
-        """Generates a graphical representation of the Trie."""
+        """Generates and saves a graphical representation of the Trie."""
         graph = graphviz.Digraph(format="png", engine="dot")
-        graph.node(
-            "root", label="Root", shape="ellipse", style="filled", fillcolor="lightgray"
-        )
+        
+        # Root node definition
+        graph.node("root", label="Root", shape="ellipse", style="filled", fillcolor="lightgray")
 
-        self._generate_graph(self.root, graph, "root", "root")
-
-        # Render the graph to a PNG file
+        # Generate the graph starting from the root
+        self._generate_graph(self.root, graph, "root")
+        
         graph.render("trie_visualization", cleanup=True)
-
 
 # Example usage
 trie = Trie()
-trie.insert("apple")
-trie.insert("app")
+
+# Insert words into the trie
 trie.insert("banana")
 trie.insert("bat")
 trie.insert("ball")
 trie.insert("batman")
+trie.insert("ab")
+trie.insert("abcd")
 
-# Visualize the Trie
-trie.visualise()
+# Get words with a prefix
+print(trie.getWordsWithPrefix("ba"))  # ['banana', 'bat', 'ball', 'batman']
